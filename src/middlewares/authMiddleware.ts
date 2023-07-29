@@ -1,13 +1,23 @@
 // src/middlewares/authMiddleware.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import User from "../models/user";
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string; role: string };
+interface UserPayload {
+  id: string;
+  role: string;
+}
+
+declare global {
+  namespace Express {
+    export interface Request {
+      user?: UserPayload; // Use the UserPayload interface for the user property
+    }
+  }
 }
 
 export const authenticateUser = (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -18,12 +28,10 @@ export const authenticateUser = (
   }
 
   try {
-    const decoded = jwt.verify(token, "your_secret_key_here") as {
-      id: string;
-      role: string;
-    };
+    const decoded = jwt.verify(token, "your_secret_key_here") as UserPayload;
 
     req.user = decoded;
+
     next();
   } catch (error) {
     res.status(401).json({ error: "Invalid token" });
@@ -31,7 +39,7 @@ export const authenticateUser = (
 };
 
 export const checkAdminRole = (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
